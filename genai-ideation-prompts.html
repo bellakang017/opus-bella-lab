@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GenAI Ideation Prompts — Opus × Bella</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@200;300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --snow: #FEFDFB;
+    --warm-white: #FAF7F2;
+    --warm-bg: #F5F0E8;
+    --border: #E8E2D8;
+    --border-light: #F0EBE2;
+    --sky: #8AADC4;
+    --sky-deep: #5E8BA8;
+    --rose: #C4656A;
+    --rose-soft: #E8A0A3;
+    --wood: #A68B6B;
+    --wood-light: #D4C4A8;
+    --gold: #C9A96E;
+    --green: #7BA38E;
+    --green-deep: #5C8A6F;
+    --ink: #2E2A26;
+    --text: #3A3632;
+    --text-2: #5C534A;
+    --text-3: #8A8078;
+    --text-4: #B5ADA3;
+
+    --sidebar-w: 240px;
+    --topbar-h: 48px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--snow);
+    color: var(--text);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* === READING PROGRESS BAR === */
+  .progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(to right, var(--green), var(--sky), var(--gold));
+    z-index: 999;
+    transition: width 0.1s linear;
+    width: 0%;
+  }
+
+  /* === TOP BAR === */
+  .top-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--topbar-h);
+    background: rgba(254,253,251,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    padding: 0 1.25rem;
+  }
+
+  .top-bar-brand {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-2);
+  }
+
+  .top-bar-brand .x {
+    color: var(--gold);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 300;
+    margin: 0 0.15rem;
+  }
+
+  .top-bar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .top-bar-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    background: var(--warm-bg);
+    padding: 0.22rem 0.6rem;
+    border-radius: 10px;
+  }
+
+  .top-bar-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-4);
+  }
+
+  .hz-toggle-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.62rem;
+    color: var(--text-3);
+    background: none;
+    border: 1px solid var(--border);
+    padding: 0.2rem 0.55rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .hz-toggle-btn:hover { background: var(--warm-bg); color: var(--text); }
+
+  /* === SIDEBAR — Zen Browser Style === */
+  .sidebar {
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0;
+    width: var(--sidebar-w);
+    height: calc(100vh - var(--topbar-h));
+    background: var(--warm-white);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    z-index: 150;
+    display: flex;
+    flex-direction: column;
+    padding-top: 0.4rem;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 2px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .sb-section { padding: 0.6rem 0.6rem 0.3rem; }
+
+  .sb-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.48rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-4);
+    margin-bottom: 0.4rem;
+    padding: 0 0.3rem;
+  }
+
+  /* Filters — horizontal chips inside sidebar */
+  .sb-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-bottom: 0.15rem;
+  }
+
+  .sb-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.22rem 0.45rem;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.62rem;
+    color: var(--text-3);
+  }
+
+  .sb-filter:hover { background: var(--warm-bg); color: var(--text-2); }
+  .sb-filter.active {
+    background: white;
+    border-color: var(--border-light);
+    color: var(--text);
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+
+  .sb-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+  .sb-dot.c-all { background: var(--wood-light); }
+  .sb-dot.c-green { background: var(--green); }
+  .sb-dot.c-rose { background: var(--rose); }
+  .sb-dot.c-gold { background: var(--gold); }
+
+  .sb-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.5rem;
+    color: var(--text-4);
+    margin-left: auto;
+  }
+
+  /* Nav links — Zen tab style */
+  .sb-nav { display: flex; flex-direction: column; gap: 1px; }
+
+  .sb-link {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.4rem 0.5rem;
+    text-decoration: none;
+    border-radius: 7px;
+    transition: all 0.15s ease;
+    position: relative;
+    margin: 0 0.15rem;
+  }
+
+  .sb-link:hover { background: var(--warm-bg); }
+
+  .sb-link.active {
+    background: white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+
+  /* Mini badge in sidebar */
+  .sb-badge {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.48rem;
+    font-weight: 500;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .sb-badge-green { background: var(--green); }
+  .sb-badge-rose { background: var(--rose); }
+  .sb-badge-gold { background: var(--gold); }
+
+  .sb-link-title {
+    font-size: 0.68rem;
+    color: var(--text-3);
+    line-height: 1.3;
+    transition: color 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sb-link:hover .sb-link-title { color: var(--text); }
+  .sb-link.active .sb-link-title { color: var(--text); font-weight: 500; }
+
+  /* Section labels in nav */
+  .sb-nav-section {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.42rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-4);
+    padding: 0.55rem 0.5rem 0.2rem;
+    margin: 0 0.15rem;
+  }
+
+  .sb-footer {
+    margin-top: auto;
+    padding: 0.65rem;
+    border-top: 1px solid var(--border-light);
+    font-size: 0.55rem;
+    color: var(--text-4);
+    line-height: 1.5;
+  }
+
+  .sb-footer em { font-family: 'Cormorant Garamond', serif; color: var(--text-3); font-size: 0.65rem; }
+
+  /* === MAIN === */
+  .main {
+    margin-left: var(--sidebar-w);
+    margin-top: var(--topbar-h);
+    min-height: calc(100vh - var(--topbar-h));
+    position: relative;
+  }
+
+  /* === HERO === */
+  .hero {
+    padding: 3.5rem 3rem 2.5rem;
+    background: linear-gradient(170deg, var(--snow) 0%, var(--warm-white) 60%, rgba(138,173,196,0.08) 100%);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hero-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--sky-deep);
+    margin-bottom: 1.25rem;
+  }
+
+  .hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.8rem;
+    font-weight: 300;
+    line-height: 1.12;
+    max-width: 600px;
+    margin-bottom: 1.25rem;
+    color: var(--ink);
+  }
+
+  .hero h1 strong {
+    font-weight: 700;
+    font-style: italic;
+    color: var(--sky-deep);
+  }
+
+  .hero-desc {
+    font-size: 0.88rem;
+    color: var(--text-2);
+    max-width: 520px;
+    line-height: 1.75;
+    font-weight: 300;
+  }
+
+  /* === FRAMEWORK === */
+  .framework {
+    padding: 2rem 3rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--warm-white);
+  }
+
+  .fw-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-4);
+    margin-bottom: 1rem;
+  }
+
+  .fw-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .fw-card {
+    padding: 1.15rem;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid var(--border-light);
+    position: relative;
+    transition: box-shadow 0.2s;
+  }
+
+  .fw-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+
+  .fw-card::before {
+    content: '';
+    position: absolute;
+    top: 1.15rem;
+    left: 0;
+    width: 3px;
+    height: 1rem;
+    border-radius: 0 2px 2px 0;
+  }
+
+  .fw-card:nth-child(1)::before, .fw-card:nth-child(2)::before { background: var(--gold); }
+  .fw-card:nth-child(3)::before { background: var(--green); }
+  .fw-card:nth-child(4)::before { background: var(--rose); }
+
+  .fw-card-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.48rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-4);
+    margin-bottom: 0.25rem;
+  }
+
+  .fw-card-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 0.2rem;
+  }
+
+  .fw-card-desc {
+    font-size: 0.74rem;
+    color: var(--text-3);
+    line-height: 1.5;
+  }
+
+  /* === CONTENT === */
+  .content { padding: 0 3rem 4rem; }
+
+  /* Section dividers — sticky */
+  .sec-div {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1.75rem 0 1rem;
+    position: sticky;
+    top: var(--topbar-h);
+    background: var(--snow);
+    z-index: 10;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 1.25rem;
+  }
+
+  .sec-div-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-4);
+    white-space: nowrap;
+  }
+
+  .sec-div-line { flex: 1; height: 1px; background: var(--border); }
+
+  .sec-div-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    font-weight: 500;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  /* === PROMPT CARDS === */
+  .p-card {
+    margin-bottom: 1.25rem;
+    background: white;
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+
+  .p-card:hover { box-shadow: 0 3px 16px rgba(0,0,0,0.05); }
+
+  /* Card header — always visible, clickable */
+  .p-header {
+    padding: 1rem 1.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .p-header:hover { background: var(--warm-white); }
+
+  .p-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .p-badge-green { background: var(--green); }
+  .p-badge-rose { background: var(--rose); }
+  .p-badge-gold { background: var(--gold); }
+
+  .p-header-text { flex: 1; min-width: 0; }
+
+  .p-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.25;
+  }
+
+  .p-subtitle {
+    font-size: 0.7rem;
+    color: var(--text-3);
+    margin-top: 0.15rem;
+    line-height: 1.4;
+  }
+
+  .p-tags {
+    display: flex;
+    gap: 0.3rem;
+    flex-shrink: 0;
+  }
+
+  .p-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.45rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.18rem 0.45rem;
+    border-radius: 5px;
+  }
+
+  .p-tag-green { color: var(--green-deep); background: rgba(123,163,142,0.12); }
+  .p-tag-rose { color: var(--rose); background: rgba(196,101,106,0.1); }
+  .p-tag-gold { color: var(--gold); background: rgba(201,169,110,0.12); }
+
+  .p-chevron {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--text-4);
+    transition: transform 0.25s ease;
+  }
+
+  .p-card.open .p-chevron { transform: rotate(180deg); }
+
+  /* Card body — collapsible */
+  .p-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease;
+  }
+
+  .p-card.open .p-body { max-height: 2000px; }
+
+  .p-body-inner {
+    padding: 0 1.35rem 1.35rem;
+    border-top: 1px solid var(--border-light);
+    padding-top: 1.15rem;
+  }
+
+  .p-insight {
+    font-size: 0.82rem;
+    color: var(--text-2);
+    margin-bottom: 1.15rem;
+    line-height: 1.7;
+    padding-left: 0.85rem;
+    border-left: 2.5px solid var(--border);
+  }
+
+  .p-insight strong { color: var(--text); font-weight: 600; }
+
+  /* Prompt text — THE MAIN EVENT, big and readable */
+  .p-prompt {
+    background: var(--warm-white);
+    border: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.85;
+    padding: 1.35rem 1.5rem;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    position: relative;
+    color: var(--text);
+  }
+
+  .p-prompt .v {
+    color: var(--sky-deep);
+    font-weight: 500;
+    background: rgba(138,173,196,0.08);
+    padding: 0.1rem 0.25rem;
+    border-radius: 3px;
+  }
+
+  .p-prompt .c {
+    color: var(--text-4);
+    font-style: italic;
+  }
+
+  .p-copy {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    background: white;
+    border: 1px solid var(--border);
+    color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.5rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .p-copy:hover { background: var(--warm-bg); color: var(--text); }
+  .p-copy.copied { background: var(--green); color: white; border-color: var(--green); }
+
+  .p-copy svg { width: 10px; height: 10px; }
+
+  .p-warn {
+    font-size: 0.72rem;
+    color: var(--text-3);
+    margin-top: 0.85rem;
+    padding: 0.6rem 0.85rem;
+    background: rgba(196,101,106,0.04);
+    border-left: 2.5px solid var(--rose-soft);
+    border-radius: 0 6px 6px 0;
+    line-height: 1.55;
+  }
+
+  /* Featured card */
+  .p-card.featured {
+    border-color: rgba(123,163,142,0.3);
+    box-shadow: 0 2px 12px rgba(123,163,142,0.06);
+  }
+
+  .p-card.featured .p-header { background: rgba(123,163,142,0.03); }
+
+  /* === FOOTER === */
+  .main-footer {
+    padding: 1.5rem 3rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--warm-white);
+  }
+
+  .footer-brand {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.95rem;
+    color: var(--text-2);
+  }
+
+  .footer-brand .x { color: var(--gold); }
+
+  .footer-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.5rem;
+    color: var(--text-4);
+    letter-spacing: 0.06em;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .hero { padding: 2.5rem 1.5rem 2rem; }
+    .hero h1 { font-size: 2.1rem; }
+    .framework, .content { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .fw-grid { grid-template-columns: 1fr; }
+    .main-footer { flex-direction: column; gap: 0.75rem; align-items: flex-start; padding: 1.5rem; }
+  }
+
+  @media (max-width: 640px) {
+    .top-bar { padding: 0 1rem; }
+    .hero { padding: 2rem 1.15rem 1.5rem; }
+    .hero h1 { font-size: 1.75rem; }
+    .content { padding: 0 1.15rem 3rem; }
+    .p-prompt { font-size: 0.72rem; padding: 1rem 1.1rem; line-height: 1.75; }
+    .p-header { padding: 0.85rem 1rem; gap: 0.65rem; }
+    .p-body-inner { padding: 0 1rem 1rem; padding-top: 1rem; }
+    .p-tags { display: none; }
+    .p-badge { width: 28px; height: 28px; font-size: 0.55rem; border-radius: 6px; }
+    .sec-div { padding: 1.25rem 0 0.75rem; }
+    .sec-div-title { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="top-bar-brand">Opus<span class="x">×</span>Bella</div>
+  <div class="top-bar-right">
+    <span class="top-bar-tag">Prompt Reference</span>
+    <span class="top-bar-count">13 prompts</span>
+    <button class="hz-toggle-btn" id="toggleAllBtn" onclick="toggleAll()">모두 펼치기</button>
+  </div>
+</div>
+
+<!-- SIDEBAR — Zen Style -->
+<aside class="sidebar">
+  <div class="sb-section">
+    <div class="sb-label">Filter</div>
+    <div class="sb-filters">
+      <button class="sb-filter active" onclick="filterCards('all',this)"><span class="sb-dot c-all"></span>All</button>
+      <button class="sb-filter" onclick="filterCards('productivity',this)"><span class="sb-dot c-green"></span>Prod</button>
+      <button class="sb-filter" onclick="filterCards('breadth',this)"><span class="sb-dot c-rose"></span>Breadth</button>
+      <button class="sb-filter" onclick="filterCards('designer',this)"><span class="sb-dot c-gold"></span>Design</button>
+      <button class="sb-filter" onclick="filterCards('writer',this)"><span class="sb-dot c-gold"></span>Writer</button>
+      <button class="sb-filter" onclick="filterCards('interviewer',this)"><span class="sb-dot c-green"></span>Interv</button>
+      <button class="sb-filter" onclick="filterCards('actor',this)"><span class="sb-dot c-rose"></span>Actor</button>
+    </div>
+  </div>
+
+  <div class="sb-section" style="flex:1; overflow-y:auto; padding-bottom:0;">
+    <nav class="sb-nav">
+      <div class="sb-nav-section">Productivity</div>
+      <a href="#p01" class="sb-link" data-id="p01"><span class="sb-badge sb-badge-green">01</span><span class="sb-link-title">Few-Shot Prompting</span></a>
+      <a href="#p02" class="sb-link" data-id="p02"><span class="sb-badge sb-badge-green">02</span><span class="sb-link-title">RAG Simulation</span></a>
+
+      <div class="sb-nav-section">Semantic Breadth</div>
+      <a href="#p03" class="sb-link" data-id="p03"><span class="sb-badge sb-badge-rose">03</span><span class="sb-link-title">Persona Modifier</span></a>
+      <a href="#p04" class="sb-link" data-id="p04"><span class="sb-badge sb-badge-rose">04</span><span class="sb-link-title">Hybrid Prompting</span></a>
+      <a href="#p05" class="sb-link" data-id="p05"><span class="sb-badge sb-badge-rose">05</span><span class="sb-link-title">Chain of Thought</span></a>
+      <a href="#p06" class="sb-link" data-id="p06"><span class="sb-badge sb-badge-rose">06</span><span class="sb-link-title">Temperature Sim</span></a>
+      <a href="#p07" class="sb-link" data-id="p07"><span class="sb-badge sb-badge-gold">07</span><span class="sb-link-title">P ↔ F 전환</span></a>
+
+      <div class="sb-nav-section">Designer</div>
+      <a href="#p08" class="sb-link" data-id="p08"><span class="sb-badge sb-badge-gold">08</span><span class="sb-link-title">Stimulus Sampling</span></a>
+      <a href="#p09" class="sb-link" data-id="p09"><span class="sb-badge sb-badge-gold">09</span><span class="sb-link-title">Confound Detection</span></a>
+
+      <div class="sb-nav-section">Writer</div>
+      <a href="#p10" class="sb-link" data-id="p10"><span class="sb-badge sb-badge-gold">10</span><span class="sb-link-title">Persuasive Rewriting</span></a>
+      <a href="#p11" class="sb-link" data-id="p11"><span class="sb-badge sb-badge-gold">11</span><span class="sb-link-title">Simplification</span></a>
+
+      <div class="sb-nav-section">Interviewer</div>
+      <a href="#p12" class="sb-link" data-id="p12"><span class="sb-badge sb-badge-green">12</span><span class="sb-link-title">Socratic Interview</span></a>
+      <a href="#p13" class="sb-link" data-id="p13"><span class="sb-badge sb-badge-green">13</span><span class="sb-link-title">Inner Crowd</span></a>
+
+      <div class="sb-nav-section">Actor</div>
+      <a href="#p14" class="sb-link" data-id="p14"><span class="sb-badge sb-badge-rose">14</span><span class="sb-link-title">Consumer Roleplay</span></a>
+    </nav>
+  </div>
+
+  <div class="sb-footer">
+    De Freitas, Nave, & Puntoni (2025). <em>JCR</em>, 52(1), 18–31.
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <section class="hero">
+    <div class="hero-eyebrow">Opus × Bella — Prompt Reference</div>
+    <h1>Ideation with<br><strong>Generative AI</strong></h1>
+    <p class="hero-desc">De Freitas, Nave, & Puntoni (2025)의 GenAI ideation 프롬프트 13개. Productivity × Semantic Breadth dual pathway와 네 가지 ideation role을 실용적으로 정리.</p>
+  </section>
+
+  <section class="framework">
+    <div class="fw-label">Ideation Roles — Co-Creation Spectrum</div>
+    <div class="fw-grid">
+      <div class="fw-card"><div class="fw-card-sub">LLM as Key Ideator</div><div class="fw-card-title">Designer</div><div class="fw-card-desc">Stimulus sampling, internal validity 강화. Hypothesis-blind.</div></div>
+      <div class="fw-card"><div class="fw-card-sub">LLM as Key Ideator</div><div class="fw-card-title">Writer</div><div class="fw-card-desc">아이디어 표현 개선. Articulation, persuasion, simplification.</div></div>
+      <div class="fw-card"><div class="fw-card-sub">Human as Key Ideator</div><div class="fw-card-title">Interviewer</div><div class="fw-card-desc">Socratic questioning으로 사고를 끌어냄.</div></div>
+      <div class="fw-card"><div class="fw-card-sub">Human as Key Ideator</div><div class="fw-card-title">Actor</div><div class="fw-card-desc">Consumer roleplay를 통한 아이디어 탐색.</div></div>
+    </div>
+  </section>
+
+  <div class="content">
+
+    <!-- ===== PRODUCTIVITY ===== -->
+    <div class="sec-div" id="sec-productivity">
+      <span class="sec-div-num">01</span><span class="sec-div-line"></span>
+      <span class="sec-div-title">Productivity</span><span class="sec-div-line"></span>
+    </div>
+
+    <div class="p-card" id="p01" data-cat="productivity">
+      <div class="p-header" onclick="toggleCard(this)">
+        <div class="p-badge p-badge-green">01</div>
+        <div class="p-header-text">
+          <div class="p-title">Few-Shot Prompting</div>
+          <div class="p-subtitle">좁은 도메인에서 persistence를 극대화</div>
+        </div>
+        <div class="p-tags"><span class="p-tag p-tag-green">Productivity</span></div>
+        <div class="p-chevron"><svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg></div>
+      </div>
+      <div class="p-body"><div class="p-body-inner">
+        <div class="p-insight"><strong>핵심:</strong> 관련 exemplar를 제공하면 LLM이 해당 영역의 기존 지식을 더 깊이 활성화함. Persistence path의 정수.</div>
+        <div class="p-prompt"><button class="p-copy" onclick="copyP(event,this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>Copy</button>Generate new research ideas for a consumer behavior researcher interested in <span class="v">&lt;topic&gt;</span>. The best idea will be turned into a paper submitted to the Journal of Consumer Research, where the goal is to get it published. The ideas are just ideas. The paper need not necessarily be clearly feasible. Generate 30 ideas as 30 separate paragraphs.
+
++ Here are some well received ideas for inspiration: <span class="v">&lt;Good Ideas&gt;</span></div>
+      </div></div>
+    </div>
+
+    <div class="p-card" id="p02" data-cat="productivity">
+      <div class="p-header" onclick="toggleCard(this)">
+        <div class="p-badge p-badge-green">02</div>
+        <div class="p-header-text">
+          <div class="p-title">RAG Simulation</div>
+          <div class="p-subtitle">API 없이 LLM에게 외부 지식 보강 지시</div>
+        </div>
+        <div class="p-tags"><span class="p-tag p-tag-green">Productivity</span></div>
+        <div class="p-chevron"><svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg></div>
+      </div>
+      <div class="p-body"><div class="p-body-inner">
+        <div class="p-insight"><strong>핵심:</strong> LLM에게 "RAG처럼 행동하라"고 지시하는 프롬프트 레벨 대안.</div>
+        <div class="p-prompt"><button class="p-copy" onclick="copyP(event,this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>Copy</button>You are an expert in consumer behavior and AI-driven recommendations. Retrieve the most recent consumer research papers on <span class="v">&lt;topic&gt;</span> and summarize their key findings. Then, use this retrieved information to generate insights on <span class="v">&lt;research question&gt;</span>. Structure your response into three sections: (1) Summary of recent research, (2) Practical implications for marketers, and (3) Future research directions.</div>
+      </div></div>
+    </div>
+
+    <!-- ===== SEMANTIC BREADTH ===== -->
+    <div class="sec-div" id="sec-breadth">
+      <span class="sec-div-num">02</span><span class="sec-div-line"></span>
+      <span class="sec-div-title">Semantic Breadth</span><span class="sec-div-line"></span>
+    </div>
+
+    <div class="p-card" id="p03" data-cat="breadth">
+      <div class="p-header" onclick="toggleCard(this)">
+        <div class="p-badge p-badge-rose">03</div>
+        <div class="p-header-text">
+          <div class="p-title">Persona Modifier</div>
+          <div class="p-subtitle">다른 semantic space에서 아이디어 끌어오기</div>
+        </div>
+        <div class="p-tags"><span class="p-tag p-tag-rose">Breadth</span></div>
+        <div class="p-chevron"><svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg></div>
+      </div>
+      <div class="p-body"><div class="p-body-inner">
+        <div class="p-insight"><strong>핵심:</strong> 특정 persona를 부여하면 LLM이 평소와 다른 영역에서 아이디어를 생성. 효과적인 persona는 trial and error로 발견.</div>
+        <div class="p-prompt"><button class="p-copy" onclick="copyP(event,this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>Copy</button>You are <span class="v">&lt;persona — e.g., Steve Jobs&gt;</span> looking to generate new <span class="v">&lt;type of ideas&gt;</span>. <span class="v">&lt;base prompt&gt;</span></div>
+      </div></div>
+    </div>
+
+    <div class="p-card" id="p04" data-cat="breadth">
+      <div class="p-header" onclick="toggleCard(this)">
+        <div class="p-badge p-badge-rose">04</div>
+        <div class="p-header-text">
+          <div class="p-title">Hybrid Prompting</div>
+          <div class="p-subtitle">독립 세션 → 풀링 → 선별로 diversity 극대화</div>
+        </div>
+        <div class="p-tags"><span class="p-tag p-tag-rose">Breadth</span></div>
+        <div class="p-chevron"><svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg></div>
+      </div>
+      <div class="p-body"><div class="p-body-inner">
+        <div class="p-insight"><strong>핵심:</strong> Girotra et al. (2010) — 독립 작업 후 통합이 집단 작업보다 우수. 40개 세션 × 30개 아이디어 → 그룹화 → 선별.</div>
+        <div class="p-prompt"><button class="p-copy" onclick="copyP(event,this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>Copy</button>You are part of a team tasked with individually generating new research ideas for a consumer behavior researcher interested in <span class="v">&lt;topic&gt;</span>. Each team member has already generated 30 ideas. Your group consists of four members, meaning you now have 120 total ideas to work with. The following ideas were generated by your team:
+
+<span class="v">&lt;list of 120 ideas&gt;</span>
+
+From these 120 ideas, select your top 10 final ideas for the group. Each idea should have a name, followed by a description of 40-80 words. Number them sequentially. The name and idea should be separated by a colon.</div>
+      </div></div>
+    </div>
+
+    <div class="p-card" id="p05" data-cat="breadth">
+      <div class="p-header" onclick="toggleCard(this)">
+        <div class="p-badge p-badge-rose">05</div>
+        <div class="p-header-text">
+          <div class="p-title">Chain of Thought Prompting</div>
+          <div class="p-subtitle">생성 → 자기평가 → 수정의 단계적 프로세스</div>
+        </div>
+        <div class="p-tags"><span class="p-tag p-tag-rose">Breadth</span></div>
+        <div class="p-chevron"><svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg></div>
+      </div>
+      <div class="p-body"><div class="p-body-inner">
+        <div class="p-insight"><strong>핵심:</strong> Diversity를 near-human level까지 끌어올림. 단계별 지시로 LLM이 자체 평가와 수정을 수행.</div>
+        <div class="p-prompt"><button class="p-copy" onclick="copyP(event,this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>Copy</button>Follow these steps. Do each step, even if you think you do not need to. First generate a list of 30 ideas (short title only). Second, go through the list and determine whether the ideas are different and bold, modify the ideas as needed to make them bolder and more different. No two ideas should be the same. This is important! Next, give the ideas a name and combine each with a paper description. The name and idea are separated by a colon and followed by a description. The idea should be expressed as a paragraph of 40-80 words. Do this step by step!</div>
+      </div></div>
+    </div>
+
+    <div class="p-card" id="p06" data-cat="breadth">
+      <div class="p-header" onclick="toggleCard(this)">
+        <div class="p-badge p-badge-rose">06</div>
+        <div class="p-header-text">
+          <div class="p-title">Temperature Simulation</div>
+          <div class="p-subtitle">Low / Medium / High stochasticity 간접 조절</div>
+        </div>
+        <div class="p-tags"><span class="p-tag p-tag-rose">Breadth</span></div>
+        <div class="p-chevron"><svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg></div>
+      </div>
+      <div class="p-body"><div class="p-body-inner">
+        <div class="p-insight"><strong>핵심:</strong> API 접근 없이 stochasticity를 간접 조절. 실제 temperature와의 상관은 약함 (Peeperkorn et al. 2024).</div>
+        <div class="p-prompt"><button class="p-copy" onclick="copyP(event,this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>Copy</button><span class="c">// LOW TEMPERATURE</span>
+Provide the most direct and factual answer to the following question, avoiding any unnecessary details or variations. <span class="v">&lt;base prompt&gt;</span>
+
+<span class="c">// MEDIUM TEMPERATURE</span>
+Provide a well-balanced and somewhat creative response while ensuring clarity and coherence. <span class="v">&lt;base prompt&gt;</span>
+
+<span class="c">// HIGH TEMPERATURE</span>
+Give me the most creative, unexpected, and outlandish response you can think of. Feel free to be unconventional! <span class="v">&lt;base prompt&gt;</span></div>
+      </div></div>
+    </div>
+
+    <div class="p-card" id="p07" data-cat="productivity breadth">
+      <div class="p-header" onclick="toggleCard(this)">
+        <div class="p-badge p-badge-gold">07</div>
+        <div class="p-header-text">
+          <div class="p-title">Persistence ↔ Flexibility 전환</div>
+          <div class="p-subtitle">프롬프팅으로 cognitive tradeoff 즉시 전환</div>
+        </div>
+        <div class="p-tags"><span class="p-tag p-tag-green">Productivity</span><span class="p-tag p-tag-rose">Breadth</span></div>
+        <div class="p-chevron"><svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg></div>
+      </div>
+      <div class="p-body"><div class="p-body-inner">
+        <div class="p-insight"><strong>핵심:</strong> 인간은 persistence와 flexibility 사이의 cognitive tradeoff가 있지만 프롬프팅으로 즉시 전환 가능.</div>
+        <div class="p-prompt"><button class="p-copy" onclick="copyP(event,this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>Copy</button><span class="c">// PERSISTENCE</span>
+What are 100 reasons a consumer might choose a more expensive product over a cheaper one? List only emotional factors.
+
+<span class="c">// FLEXIBILITY</span>
+...Include emotional, functional, and social factors.
+
+<span class="c">// FLEXIBILITY+</span>
+...and then explore interactions between these factors. Be creative!</div>
+      </div></div>
+    </div>
+
+    <!-- ===== DESIGNER ===== -->
+    <div class="sec-div" id="sec-designer">
+      <span class="sec-div-num">03</span><span class="sec-div-line"></span>
+      <span class="sec-div-title">The Designer</span><span class="sec-div-line"></span>
+    </div>
+
+    <div class="p-card" id="p08" data-cat="designer">
+      <div class="p-header" onclick="toggleCard(this)">
+        <div class="p-badge p-badge-gold">08</div>
+        <div class="p-header-text">
+          <div class="p-title">Stimulus Sampling</div>
+          <div class="p-subtitle">Hypothesis-blind stimulus 생성으로 internal validity 강화</div>
+        </div>
+        <div class="p-tags"><span class="p-tag p-tag-gold">Designer</span></div>
+        <div class="p-chevron"><svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg></div>
+      </div>
+      <div class="p-body"><div class="p-body-inner">
+        <div class="p-insight"><strong>핵심:</strong> Simonsohn et al. (2025)의 "Mix-and-Match" 접근. 실험자 bias 없는 stimulus 생성.</div>
+        <div class="p-prompt"><button class="p-copy" onclick="copyP(event,this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>Copy</button>Please generate 5 categories of <span class="v">&lt;stimulus universe&gt;</span> that differ in <span class="v">&lt;dimension used to create categories&gt;</span> and provide two specific examples of <span class="v">&lt;stimuli&gt;</span> for each.</div>
+        <div class="p-warn">프롬프트에 가설을 포함하면 안 됨 — hypothesis-blind 유지가 핵심.</div>
+      </div></div>
+    </div>
+
+    <div class="p-card" id="p09" data-cat="designer">
+      <div class="p-header" onclick="toggleCard(this)">
+        <div class="p-badge p-badge-gold">09</div>
+        <div class="p-header-text">
+          <div class="p-title">Confound Detection</div>
+          <div class="p-subtitle">실험자가 모르는 confound를 LLM으로 탐지</div>
+        </div>
+        <div class="p-tags"><span class="p-tag p-tag-gold">Designer</span></div>
+        <div class="p-chevron"><svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg></div>
+      </div>
+      <div class="p-body"><div class="p-body-inner">
+        <div class="p-insight"><strong>핵심:</strong> LLM의 semantic breadth로 실험자가 의식하지 못한 confound를 체계적으로 탐지.</div>
+        <div class="p-prompt"><button class="p-copy" onclick="copyP(event,this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>Copy</button>We are going to describe two <span class="v">&lt;stimuli&gt;</span>, please identify 5 consequential differences between them that may impact <span class="v">&lt;the dependent variable&gt;</span> in <span class="v">&lt;the hypothesized direction&gt;</span>.</div>
+      </div></div>
+    </div>
+
+    <!-- ===== WRITER ===== -->
+    <div class="sec-div" id="sec-writer">
+      <span class="sec-div-num">04</span><span class="sec-div-line"></span>
+      <span class="sec-div-title">The Writer</span><span class="sec-div-line"></span>
+    </div>
+
+    <div class="p-card" id="p10" data-cat="writer">
+      <div class="p-header" onclick="toggleCard(this)">
+        <div class="p-badge p-badge-gold">10</div>
+        <div class="p-header-text">
+          <div class="p-title">Persuasive Rewriting</div>
+          <div class="p-subtitle">리뷰어의 논리를 활용한 반론 구성</div>
+        </div>
+        <div class="p-tags"><span class="p-tag p-tag-gold">Writer</span></div>
+        <div class="p-chevron"><svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg></div>
+      </div>
+      <div class="p-body"><div class="p-body-inner">
+        <div class="p-insight"><strong>핵심:</strong> Costello, Pennycook, & Rand (2024). 상대방의 추론 체계를 활용 — Falk의 neural self-relevance와 직접 연결.</div>
+        <div class="p-prompt"><button class="p-copy" onclick="copyP(event,this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>Copy</button>Your goal is to effectively persuade the reviewer that your proposed theory about consumer behavior is accurate. The reviewer, after reading your initial submission, has expressed skepticism about your theory, stating that <span class="v">&lt;reviewer's argument&gt;</span>. You need to generate a response that convinces the reviewer, using their own reasoning, that your theory is indeed valid. The explanation should be clear and logical, presented in a way that is both accessible and compelling, without relying on excessive jargon.</div>
+      </div></div>
+    </div>
+
+    <div class="p-card" id="p11" data-cat="writer">
+      <div class="p-header" onclick="toggleCard(this)">
+        <div class="p-badge p-badge-gold">11</div>
+        <div class="p-header-text">
+          <div class="p-title">Simplification</div>
+          <div class="p-subtitle">학술 초록을 일반 독자용으로 재작성</div>
+        </div>
+        <div class="p-tags"><span class="p-tag p-tag-gold">Writer</span></div>
+        <div class="p-chevron"><svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg></div>
+      </div>
+      <div class="p-body"><div class="p-body-inner">
+        <div class="p-insight"><strong>핵심:</strong> Markowitz (2024). 단순한 언어 → processing fluency ↑ → 아이디어 자체에 대한 인식 향상.</div>
+        <div class="p-prompt"><button class="p-copy" onclick="copyP(event,this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>Copy</button>The following text is an academic abstract from <span class="v">&lt;journal&gt;</span>. Based on this abstract, create a new abstract that provides enough context for the paper's implications to be clear to readers. The statement should not contain references and should avoid numbers, measurements, and acronyms unless necessary. It should explain the significance of the research at a level understandable to an undergraduate-educated scientist outside their field of specialty. Finally, it should include no more than 120 words. Write the abstract here:</div>
+      </div></div>
+    </div>
+
+    <!-- ===== INTERVIEWER ===== -->
+    <div class="sec-div" id="sec-interviewer">
+      <span class="sec-div-num">05</span><span class="sec-div-line"></span>
+      <span class="sec-div-title">The Interviewer</span><span class="sec-div-line"></span>
+    </div>
+
+    <div class="p-card featured" id="p12" data-cat="interviewer">
+      <div class="p-header" onclick="toggleCard(this)">
+        <div class="p-badge p-badge-green">12</div>
+        <div class="p-header-text">
+          <div class="p-title">Socratic Reverse-Interview</div>
+          <div class="p-subtitle">Opus × Bella 핵심 — 질문으로 인간의 사고를 끌어냄</div>
+        </div>
+        <div class="p-tags"><span class="p-tag p-tag-green">Interviewer</span></div>
+        <div class="p-chevron"><svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg></div>
+      </div>
+      <div class="p-body"><div class="p-body-inner">
+        <div class="p-insight"><strong>핵심:</strong> Human as key ideator — LLM은 답을 주는 게 아니라 질문으로 사고를 끌어냄. Bastani et al. (2024): thinking tool로 쓸 때 learning outcome이 answering machine보다 우수.</div>
+        <div class="p-prompt"><button class="p-copy" onclick="copyP(event,this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>Copy</button>I want to conduct a research project, to be published in <span class="v">&lt;target journal&gt;</span>, on a new topic related to <span class="v">&lt;topic&gt;</span>. Help me come up with an interesting and original premise. I'd like all the ideas to come from me, but I want your help eliciting them. First, provide me with 5 questions to: (i) Inspire my creativity and imagination (ii) Prompt me to juxtapose disparate concepts or settings to create novel ideas (iii) Recall meaningful memories from my own consumption and life experiences. Then, ask me each question one at a time. For each response, ask two follow-up questions, one at a time, before moving on to the next question.</div>
+      </div></div>
+    </div>
+
+    <div class="p-card" id="p13" data-cat="interviewer">
+      <div class="p-header" onclick="toggleCard(this)">
+        <div class="p-badge p-badge-green">13</div>
+        <div class="p-header-text">
+          <div class="p-title">Inner Crowd — Self-Refutation</div>
+          <div class="p-subtitle">내부 다중 샘플링으로 아이디어 정제</div>
+        </div>
+        <div class="p-tags"><span class="p-tag p-tag-green">Interviewer</span></div>
+        <div class="p-chevron"><svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg></div>
+      </div>
+      <div class="p-body"><div class="p-body-inner">
+        <div class="p-insight"><strong>핵심:</strong> Herzog & Hertwig (2014) — 내부적으로 여러 번 샘플링 후 평균 > 단일 응답. Deliberate counter-reasoning.</div>
+        <div class="p-prompt"><button class="p-copy" onclick="copyP(event,this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>Copy</button>Start by assuming your initial idea might be flawed. Acknowledge that your first concept may not fully hit the mark. Identify potential reasons for this. Reflect on what assumptions or considerations might have led to gaps or weaknesses in your initial idea.
+
+Explore the implications of these new insights. Ask yourself: Do these considerations suggest that your idea was too ambitious, too simplistic, or off-target in another way? Develop an alternative perspective. Using this fresh understanding, refine or reframe your original idea, creating a second, improved version.</div>
+      </div></div>
+    </div>
+
+    <!-- ===== ACTOR ===== -->
+    <div class="sec-div" id="sec-actor">
+      <span class="sec-div-num">06</span><span class="sec-div-line"></span>
+      <span class="sec-div-title">The Actor</span><span class="sec-div-line"></span>
+    </div>
+
+    <div class="p-card" id="p14" data-cat="actor">
+      <div class="p-header" onclick="toggleCard(this)">
+        <div class="p-badge p-badge-rose">14</div>
+        <div class="p-header-text">
+          <div class="p-title">Consumer Roleplay</div>
+          <div class="p-subtitle">LLM을 인터뷰 대상으로 활용한 ideation</div>
+        </div>
+        <div class="p-tags"><span class="p-tag p-tag-rose">Actor</span></div>
+        <div class="p-chevron"><svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/></svg></div>
+      </div>
+      <div class="p-body"><div class="p-body-inner">
+        <div class="p-insight"><strong>핵심:</strong> Arora, Chakraborty, & Nishimura (2025). 실제 소비자 시뮬레이션이 아닌 ideation 도구. 인터뷰 질문 개발이나 새로운 consumer sample 발견에 유용.</div>
+        <div class="p-prompt"><button class="p-copy" onclick="copyP(event,this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>Copy</button>You are a respondent in an in-depth interview. Today is <span class="v">&lt;date&gt;</span>. I am <span class="v">&lt;interviewer name&gt;</span>. I will be guiding you through an online discussion. You have been selected with a handful of others across the country to share your thoughts and opinions in this research discussion, and I look forward to hearing what you have to say! You have been chosen to be a part of this discussion because you previously mentioned <span class="v">&lt;screening criteria&gt;</span>. Your name is <span class="v">&lt;name&gt;</span>. You are a <span class="v">&lt;age&gt;</span>-year-old <span class="v">&lt;demographics&gt;</span>. For the remainder of this discussion, we are going to be talking about <span class="v">&lt;topic&gt;</span>. I would love to understand your opinions and thoughts on this! Answer all the questions using as much detail as possible. There are no wrong answers!</div>
+        <div class="p-warn">LLM은 일관된 simulated world를 유지하지 않음 (Gui & Toubia 2023). Western, wealthy, liberal 관점 과대 대표 (Santurkar et al. 2023). Underrepresented groups 연구 시 특별 주의.</div>
+      </div></div>
+    </div>
+
+  </div>
+
+  <footer class="main-footer">
+    <div class="footer-brand">Opus <span class="x">×</span> Bella</div>
+    <div class="footer-meta">Feb 2026 — De Freitas, Nave, & Puntoni (2025), JCR 52(1), 18–31</div>
+  </footer>
+</div>
+
+<script>
+// Toggle individual card
+function toggleCard(header) {
+  header.closest('.p-card').classList.toggle('open');
+}
+
+// Toggle all
+let allOpen = false;
+function toggleAll() {
+  allOpen = !allOpen;
+  document.querySelectorAll('.p-card').forEach(c => {
+    if (allOpen) c.classList.add('open');
+    else c.classList.remove('open');
+  });
+  document.getElementById('toggleAllBtn').textContent = allOpen ? '모두 접기' : '모두 펼치기';
+}
+
+// Copy prompt
+function copyP(e, btn) {
+  e.stopPropagation();
+  const block = btn.closest('.p-prompt');
+  const clone = block.cloneNode(true);
+  clone.querySelector('.p-copy')?.remove();
+  const text = clone.innerText.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8.5l3 3 7-7"/></svg>Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// Filter
+function filterCards(cat, btn) {
+  document.querySelectorAll('.sb-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const cards = document.querySelectorAll('.p-card');
+  const divs = document.querySelectorAll('.sec-div');
+
+  if (cat === 'all') {
+    cards.forEach(c => c.style.display = '');
+    divs.forEach(d => d.style.display = '');
+    return;
+  }
+
+  cards.forEach(c => {
+    c.style.display = (c.dataset.cat || '').includes(cat) ? '' : 'none';
+  });
+
+  const secMap = { 'sec-productivity': 'productivity', 'sec-breadth': 'breadth', 'sec-designer': 'designer', 'sec-writer': 'writer', 'sec-interviewer': 'interviewer', 'sec-actor': 'actor' };
+  divs.forEach(d => {
+    const sCat = secMap[d.id];
+    const hasVisible = Array.from(cards).some(c => c.style.display !== 'none' && (c.dataset.cat || '').includes(sCat));
+    d.style.display = hasVisible ? '' : 'none';
+  });
+}
+
+// Scroll spy
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.id;
+      document.querySelectorAll('.sb-link').forEach(l => {
+        l.classList.toggle('active', l.dataset.id === id);
+      });
+    }
+  });
+}, { rootMargin: '-72px 0px -60% 0px' });
+document.querySelectorAll('.p-card').forEach(c => obs.observe(c));
+
+// Progress bar
+window.addEventListener('scroll', () => {
+  const h = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = h > 0 ? (window.scrollY / h) * 100 : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+});
+</script>
+
+</body>
+</html>
